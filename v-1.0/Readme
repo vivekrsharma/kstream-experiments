@@ -12,14 +12,14 @@ Make sure to update config files (./java.config, ./kafka-streams/src/main/resour
 with right credentials, server urls etc to point to a specific kafka cluster.
 
 Producer
-cd ./kafka-streams/
+cd ./producer/
 ./gradlew runStreams -Pargs=producer
 
 Topology
-cd ./kafka-streams/
+cd ./processor/
 ./gradlew runStreams -Pargs=processor
 
 Consumer
-cd ./Consumer/ 
+cd ./consumer/ 
 mvn clean package
 mvn exec:java -Dexec.mainClass="io.confluent.examples.clients.cloud.ConsumerExample" -Dexec.args="./java.config processor-output-topic"
