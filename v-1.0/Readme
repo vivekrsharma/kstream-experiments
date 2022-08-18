@@ -1,0 +1,25 @@
+This is codebase for Java based producer, client, topology processors.
+
+System Dependencies:
+- Apache Maven 3.8.6
+- Java version 18.0.2
+- Gradle 7.5.1
+
+
+How to run:
+
+Make sure to update config files (./java.config, ./kafka-streams/src/main/resources/ccloud.properties, ./kafka-streams/src/main/resources/streams.properties)
+with right credentials, server urls etc to point to a specific kafka cluster.
+
+Producer
+cd ./producer/
+./gradlew runStreams -Pargs=producer
+
+Topology
+cd ./processor/
+./gradlew runStreams -Pargs=processor
+
+Consumer
+cd ./consumer/ 
+mvn clean package
+mvn exec:java -Dexec.mainClass="io.confluent.examples.clients.cloud.ConsumerExample" -Dexec.args="./java.config processor-output-topic"
