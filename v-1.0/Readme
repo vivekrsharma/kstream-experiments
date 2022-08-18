@@ -8,6 +8,9 @@ System Dependencies:
 
 How to run:
 
+Make sure to update config files (./java.config, ./kafka-streams/src/main/resources/ccloud.properties, ./kafka-streams/src/main/resources/streams.properties)
+with right credentials, server urls etc to point to a specific kafka cluster.
+
 Producer
 cd ./kafka-streams/
 ./gradlew runStreams -Pargs=producer
