@@ -1,0 +1,25 @@
+This is codebase for Java based producer, client, topology processors.
+
+Some useful commands:
+Java single consumer
+pwd:  ./Consumer/ 
+mvn clean package
+mvn exec:java -Dexec.mainClass="io.confluent.examples.clients.cloud.ConsumerExample" -Dexec.args="./java.config processor-output-topic"
+
+
+Java producer + topology processor (using processor APIs) + Serde
+Pwd: ./kafka-streams/
+./gradlew build
+./gradlew runStreams -Pargs=processor
+
+
+Java single producer
+Pwd: ./kafka-streams/
+./gradlew runStreams -Pargs=producer
+
+Java only topology 
+Pwd: ./kafka-streams
+./gradlew runStreams -Pargs=processor
+ 
+
+git checkout 7.2.1-post

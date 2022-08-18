@@ -1,0 +1,11 @@
+io/confluent/examples/clients/cloud/ConsumerExample.class
+io/confluent/examples/clients/cloud/ProducerAvroExample.class
+io/confluent/examples/clients/cloud/DataRecordAvro.class
+io/confluent/examples/clients/cloud/ConsumerExamplePageviews.class
+io/confluent/examples/clients/cloud/StreamsAvroExample.class
+io/confluent/examples/clients/cloud/DataRecordAvro$Builder.class
+io/confluent/examples/clients/cloud/ProducerAvroExample$1.class
+io/confluent/examples/clients/cloud/DataRecordAvro$1.class
+io/confluent/examples/clients/cloud/ConsumerAvroExample.class
+io/confluent/examples/clients/cloud/model/PageviewRecord.class
+io/confluent/examples/clients/cloud/model/DataRecord.class
