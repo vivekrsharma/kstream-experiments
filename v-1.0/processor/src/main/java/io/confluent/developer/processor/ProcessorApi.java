@@ -1,3 +1,18 @@
+/**
+ * Copyright 2020 Confluent Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.confluent.developer.processor;
 
 import io.confluent.developer.avro.ElectronicOrder;
@@ -27,12 +42,18 @@ import java.util.Set;
 
 import static io.confluent.developer.StreamsUtils.*;
 
+/*
+ProcessorApi class performs:
+1. Creates a topology using processor APIs.
+2. Perform an aggregation operation using a state store.
+3. Publish messages to sink topic.
+*/
 public class ProcessorApi {
 
-    static class TotalPriceOrderProcessorSupplier implements ProcessorSupplier<String, ElectronicOrder, String, Double> {
+    static class ProcessorStore implements ProcessorSupplier<String, ElectronicOrder, String, Double> {
         final String storeName;
 
-        public TotalPriceOrderProcessorSupplier(String storeName) {
+        public ProcessorStore(String storeName) {
             this.storeName = storeName;
         }
 
@@ -49,7 +70,6 @@ public class ProcessorApi {
                     // Schedule a punctuation  HINT: use context.schedule and the method you want to call is forwardAll
                     this.context = context;
                     store = context.getStateStore(storeName);
-                    // this.context.schedule(Duration.ofSeconds(30), PunctuationType.STREAM_TIME, this::forwardAll);
                     this.context.schedule(Duration.ofMillis(1), PunctuationType.STREAM_TIME, this::forwardAll);
                 }
 
@@ -60,27 +80,24 @@ public class ProcessorApi {
                     try (KeyValueIterator<String, Double> iterator = store.all()) {
                         while (iterator.hasNext()) {
                             final KeyValue<String, Double> nextKV = iterator.next();
-                            final Record<String, Double> totalPriceRecord = new Record<>(nextKV.key, nextKV.value, timestamp);
-                            context.forward(totalPriceRecord);
+                            final Record<String, Double> r = new Record<>(nextKV.key, nextKV.value, timestamp);
+                            context.forward(r);
                         }
                     }
                 }
 
+                // This is the first aggreagation operation.
+                // This can be separated out into another package later to scale up aggragations.
+                // As of now, it performs a simple aggregation to maintain total count of the input key.
                 @Override
                 public void process(Record<String, ElectronicOrder> record) {
-                    // Get the current total from the store HINT: use the key on the record
-                    // Don't forget to check for null
-                    // Add the price from the value to the current total from store and put it in the store
-                    // HINT state stores are key-value stores
                     final String key = record.key();
                     Double currentTotal = store.get(key);
                     if (currentTotal == null) {
                         currentTotal = 0.0;
                     }
-                    //Double newTotal = record.value().getPrice() + currentTotal;
                     Double newTotal = 1 + currentTotal;
                     store.put(key, newTotal);
-                    System.out.println(">>>>>>> Key: " + key + " Value: " + newTotal);
                 }
             };
         }
@@ -109,6 +126,8 @@ public class ProcessorApi {
         final Serde<String> stringSerde = Serdes.String();
         final Serde<Double> doubleSerde = Serdes.Double();
 
+        // Define processor topology.  The flow would be:
+        // source topic -> intermediate topic -> sink topic
         final Topology topology = new Topology();
         topology.addSource(
             "source-node",
@@ -118,7 +137,7 @@ public class ProcessorApi {
 
         topology.addProcessor(
             "aggregate-price",
-            new TotalPriceOrderProcessorSupplier(storeName),
+            new ProcessorStore(storeName),
             "source-node");
 
         topology.addSink(
@@ -128,20 +147,7 @@ public class ProcessorApi {
             doubleSerde.serializer(),
             "aggregate-price");
 
-        // Add a source node to the topology  HINT: topology.addSource
-        // Give it a name, add deserializers for the key and the value and provide the input topic name
-       
-        // Now add a processor to the topology HINT topology.addProcessor
-        // You'll give it a name, add a processor supplier HINT: a new instance and provide the store name
-        // You'll also provide a parent name HINT: it's the name you used for the source node
-
-        // Finally, add a sink node HINT topology.addSink
-        // As before give it a name, the output topic name, serializers for the key and value HINT: string and double
-        // and the name of the parent node HINT it's the name you gave the processor
-
-
         final KafkaStreams kafkaStreams = new KafkaStreams(topology, streamsProps);
-        // TopicLoader.runProducer();
         kafkaStreams.start();
     }
 
