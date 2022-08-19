@@ -16,25 +16,34 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Properties;
 
+/*
+TopicLoader is a class responsible for:
+1. Creating source, sink topics in Confluent cluster at the application boot.
+It uses Admin APIs to do so.
+2. Produce messages to source topic in serialized format.
+*/
 public class TopicLoader {
-
     public static void main(String[] args) throws IOException {
         runProducer();
     }
 
      public static void runProducer() throws IOException {
+        // load kafka cluster properties.
         Properties properties = StreamsUtils.loadProperties();
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+
+        // Admin APIs to create topics in kafka cluster, iff they are not already created.
         try(Admin adminClient = Admin.create(properties);
+            // Instantiate a producer.
             Producer<String, ElectronicOrder> producer = new KafkaProducer<>(properties)) {
             final String inputTopic = properties.getProperty("processor.input.topic");
             final String outputTopic = properties.getProperty("processor.output.topic");
             var topics = List.of(StreamsUtils.createTopic(inputTopic), StreamsUtils.createTopic(outputTopic));
             adminClient.createTopics(topics);
-
             Callback callback = StreamsUtils.callback();
 
+            // Define events/messages.  This can be moved to a separate class later.
             Instant instant = Instant.now();
             ElectronicOrder electronicOrderOne = ElectronicOrder.newBuilder()
                     .setElectronicId("HDTV-2333")
@@ -44,7 +53,6 @@ public class TopicLoader {
                     .setTime(instant.toEpochMilli()).build();
 
             instant = instant.plusSeconds(60L);
-            // instant = instant.plusMillis(10L);
 
             ElectronicOrder electronicOrderTwo = ElectronicOrder.newBuilder()
                     .setElectronicId("HDTV-2333")
@@ -54,7 +62,6 @@ public class TopicLoader {
                     .setTime(instant.toEpochMilli()).build();
 
             instant = instant.plusSeconds(60L);
-        // instant = instant.plusMillis(10L);
 
             ElectronicOrder electronicOrderThree = ElectronicOrder.newBuilder()
                     .setElectronicId("HDTV-2333")
@@ -64,7 +71,6 @@ public class TopicLoader {
                     .setTime(instant.toEpochMilli()).build();
 
             instant = instant.plusSeconds(60L);
-        // instant = instant.plusMillis(10L);
 
             ElectronicOrder electronicOrderFour = ElectronicOrder.newBuilder()
                     .setElectronicId("HDTV-2333")
@@ -74,11 +80,13 @@ public class TopicLoader {
                     .setTime(instant.toEpochMilli()).build();
 
 
+            // List of messages to produce.
             var electronicOrders = List.of(electronicOrderOne, electronicOrderTwo, electronicOrderThree,electronicOrderFour,
             electronicOrderOne, electronicOrderTwo, electronicOrderThree,electronicOrderFour,
             electronicOrderOne, electronicOrderTwo, electronicOrderThree,electronicOrderFour,
             electronicOrderOne, electronicOrderTwo, electronicOrderThree,electronicOrderFour);
 
+            // Using Produer.send() to publish messages to Kafka topic.
             electronicOrders.forEach((electronicOrder -> {
                 ProducerRecord<String, ElectronicOrder> producerRecord = new ProducerRecord<>(inputTopic,
                         0,
